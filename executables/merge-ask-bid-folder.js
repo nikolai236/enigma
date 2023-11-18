@@ -14,7 +14,7 @@ async function overwriteFolder(path) {
 }
 
 async function main(inputFolder, outputFolder1, outputFolder2, interval) {
-    const files = await readdir(inputFolder1);
+    const files = await readdir(inputFolder);
     const preffixes = files
         .map(f => f.split('_')[0])
         .filter((val, i, arr) => arr.indexOf(val) !== i);
