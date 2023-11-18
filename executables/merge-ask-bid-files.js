@@ -196,10 +196,12 @@ if(require.main === module) {
     const outputDir = process.argv[4];
     const interval = nominationToInterval(process.argv[5]);
 
-    let files = await readdir(folderPath);
-    files = files.filter(n => n.startsWith(preffix));
-
-    main(files, preffix, outputDir, interval);
+    (async () => {
+        let files = await readdir(folderPath);
+        files = files.filter(n => n.startsWith(preffix));
+    
+        main(files, preffix, outputDir, interval);
+    })();
 }
 
 module.exports = {
