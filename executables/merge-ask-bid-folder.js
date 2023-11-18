@@ -29,10 +29,10 @@ async function main(inputFolder, outputFolder1, outputFolder2, interval) {
             .map(f => join(inputFolder, f));
 
         mergeAskBidData(
-            interval,
             filesToMerge,
             pref,
             join(outputFolder1),
+            interval
         );
     }));
 
