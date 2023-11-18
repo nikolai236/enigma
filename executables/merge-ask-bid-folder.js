@@ -1,5 +1,6 @@
 const { mergeAskBidData, DAY, HOUR, MINUTE } = require('./merge-ask-bid-files');
 const { existsSync, promises: { readdir, mkdir, rm } } = require('fs');
+const { join } = require('path');
 const { loadOHLCVFile } = require('./price-data-to-ohlcv');
 
 function availibleIntervals() {
@@ -23,11 +24,15 @@ async function main(inputFolder, outputFolder1, outputFolder2, interval) {
         const out = join(outputFolder1, pref);
         await overwriteFolder(out);
 
+        const filesToMerge = files
+            .filter(f => f.startsWith(pref))
+            .map(f => join(inputFolder, f));
+
         mergeAskBidData(
-            files.filter(f => f.startsWith(pref)),
+            interval,
+            filesToMerge,
             pref,
             join(outputFolder1),
-            interval,
         );
     }));
 

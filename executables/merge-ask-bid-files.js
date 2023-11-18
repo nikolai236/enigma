@@ -1,6 +1,6 @@
 const { createWriteStream } = require('fs');
 const { readFile, readdir } = require('fs/promises');
-const { join } = require('path');
+const { join, dirname } = require('path');
 const { gunzip } = require('zlib');
 const { SingleBar, Presets } = require('cli-progress');
 
@@ -180,6 +180,8 @@ async function mergeAskBidData(interval, groupedFileNames, root, outputFile) {
 }
 
 async function main(fileNames, preffix, outputDir, interval) {
+    const root = dirname(fileNames[0]);
+
     const grouped = groupFiles(fileNames);
     const sorted  = await sortByDate(grouped);
 
@@ -187,7 +189,7 @@ async function main(fileNames, preffix, outputDir, interval) {
         outputDir,
         `${preffix}_${getIntervalNomination(interval)}`
     );
-    await mergeAskBidData(interval, sorted, inputFolder, outputFile);
+    await mergeAskBidData(interval, sorted, root, outputFile);
 }
 
 if(require.main === module) {
@@ -199,9 +201,9 @@ if(require.main === module) {
     (async () => {
         let files = await readdir(folderPath);
         files = files.filter(n => n.startsWith(preffix));
-    
+
         main(files, preffix, outputDir, interval);
-    })();
+    })()
 }
 
 module.exports = {
