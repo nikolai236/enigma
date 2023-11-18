@@ -31,7 +31,9 @@ async function getOHLCVData() {
 }
 
 async function main() {
-    const chart = createChart(document.querySelector('.chartWrapper'));
+    const chart = createChart(document.querySelector('.chartWrapper'), {
+        autoSize: true
+    });
     const data = await getOHLCVData();
     console.log(data[0])
     const series = chart.addCandlestickSeries({
@@ -42,5 +44,6 @@ async function main() {
         wickDownColor: '#ef5350'
     });
     series.setData(data);
+    chart.timeScale().fitContent();
 }
 main();

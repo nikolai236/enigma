@@ -4,11 +4,38 @@ const { join } = require('path');
 const { gunzip } = require('zlib');
 const { SingleBar, Presets } = require('cli-progress');
 
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
 function ETDate(unixEpoch) {
     return new Date((new Date(unixEpoch)).toLocaleString(
         'en-US',
         { timeZone: 'America/New_York' },
     ));
+}
+
+function nominationToInterval(nomination) {
+    const obj = { D: 0, H: 0, m: 0, s: 0 };
+    nomination.split(',').forEach((e) => {
+        const key = e.slice(-1);
+        obj[key] = Number(e.slice(0, -1));
+    });
+    return obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
+}
+
+function getIntervalNomination(interval) {
+    const nameObj = { D: Math.floor(interval / DAY), };
+
+    nameObj.H = Math.floor((interval % DAY) / HOUR);
+    nameObj.m = Math.floor(((interval % DAY) % HOUR) / MINUTE);
+    nameObj.s = Math.floor((((interval % DAY) % HOUR) % MINUTE) / SECOND);
+
+    return Object.entries(nameObj)
+        .filter(([_, value]) => value != 0)
+        .reduce((ret, [key, value]) => ret + `${value}${key},`, '')
+        .slice(0, -1);
 }
 
 async function readGzip(data) {
@@ -61,42 +88,6 @@ async function sortByDate(fileNames) {
         const date2 = extractDate(b);
         return date1 - date2;
     });
-}
-
-async function mergeAskBidData(groupedFileNames, root, outputFile) {
-    const porgressBar = new SingleBar({}, Presets.shades_classic);
-    porgressBar.start(groupedFileNames.length, 0);
-
-    const decompress = async (filename, type) => {
-        if(filename == null) return [];
-
-        const path = join(root, filename);
-        const data = await readFile(path);
-
-        return (await readGzip(data))
-            .split('\n')
-            .filter(row => row !== '')
-            .map(row => [type, ...row.split(',')]);
-    }
-
-    const stream = createWriteStream(outputFile, { flags: 'w' });
-
-    for(const { ASK, BID } of groupedFileNames) {
-        const [askData, bidData] = await Promise.all([
-            decompress(ASK, 'ASK'),
-            decompress(BID, 'BID'),
-        ]);
-
-        await writeData(
-            [...askData, ...bidData],
-            1000,
-            stream,
-        );
-        porgressBar.increment();
-    }
-
-    stream.end();
-    porgressBar.stop();
 }
 
 async function writeData(askBidData, interval, writer, meanSpread=0, spreadIdx=0) {
@@ -152,15 +143,72 @@ async function writeData(askBidData, interval, writer, meanSpread=0, spreadIdx=0
     }
 }
 
-async function main() {
-    const folderPath = process.argv[2];
+async function mergeAskBidData(interval, groupedFileNames, root, outputFile) {
+    const porgressBar = new SingleBar({}, Presets.shades_classic);
+    porgressBar.start(groupedFileNames.length, 0);
 
-    let files   = await readdir(folderPath);
-    files = files.filter(n => n.startsWith('ES_U23'));
+    const decompress = async (filename, type) => {
+        if(filename == null) return [];
 
-    const grouped = groupFiles(files);
+        const path = join(root, filename);
+        const data = await readFile(path);
+
+        return (await readGzip(data))
+            .split('\n')
+            .filter(row => row !== '')
+            .map(row => [type, ...row.split(',')]);
+    }
+
+    const stream = createWriteStream(outputFile, { flags: 'w' });
+
+    for(const { ASK, BID } of groupedFileNames) {
+        const [askData, bidData] = await Promise.all([
+            decompress(ASK, 'ASK'),
+            decompress(BID, 'BID'),
+        ]);
+
+        await writeData(
+            [...askData, ...bidData],
+            interval,
+            stream,
+        );
+        porgressBar.increment();
+    }
+
+    stream.end();
+    porgressBar.stop();
+}
+
+async function main(fileNames, preffix, outputDir, interval) {
+    const grouped = groupFiles(fileNames);
     const sorted  = await sortByDate(grouped);
 
-    await mergeAskBidData(sorted, folderPath, 'test-output');
+    const outputFile = join(
+        outputDir,
+        `${preffix}_${getIntervalNomination(interval)}`
+    );
+    await mergeAskBidData(interval, sorted, inputFolder, outputFile);
 }
-main();
+
+if(require.main === module) {
+    const folderPath = process.argv[2];
+    const preffix = process.argv[3];
+    const outputDir = process.argv[4];
+    const interval = nominationToInterval(process.argv[5]);
+
+    let files = await readdir(folderPath);
+    files = files.filter(n => n.startsWith(preffix));
+
+    main(files, preffix, outputDir, interval);
+}
+
+module.exports = {
+    DAY,
+    HOUR,
+    MINUTE,
+    SECOND,
+
+    mergeAskBidData: main,
+    getIntervalNomination,
+    nominationToInterval,
+};

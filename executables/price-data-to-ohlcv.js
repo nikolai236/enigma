@@ -1,11 +1,7 @@
 const { createReadStream, createWriteStream } = require('fs');
 const { parse } = require('csv-parse');
-const { join } = require('path');
-
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
+const { join, basename } = require('path');
+const { nominationToInterval } = require('./merge-ask-bid-files');
 
 class Candle {
     constructor(closeTime, volume, open) {
@@ -18,7 +14,7 @@ class Candle {
         this.close = open;
     }
 
-    addPriceData(volume, price) {
+    supplementData(volume, price) {
         this.volume += volume;
 
         this.low = Math.min(price, this.low);
@@ -64,14 +60,17 @@ async function getCandlestickData(fileName, interval=5*MINUTE) {
     return candles;
 }
 
-async function loadOHLCVFile(inputFile, interval, outputDir='.') {
-    const candles = await getCandlestickData(inputFile, interval);
-    const outputFile = join(outputDir, 'ohlcv.txt');
+async function loadOHLCVFile(inputFile, outputFolder, intervalStr) {
+    const interval = nominationToInterval(intervalStr);
+    const candleData = await getCandlestickData(inputFile, interval);
 
-    const stream = createWriteStream(outputFile, { flags: 'w' });
+    const name = basename(inputFile);
+    const out = join(outputFolder, `${name}_${intervalStr}.ohlcv`);
+
+    const stream = createWriteStream(out, { flags: 'w' });
     const drain = () => new Promise(r => stream.once('drain', () => r()));
 
-    for(const { open, high, low, close, closeTime, volume } of candles) {
+    for(const { open, high, low, close, closeTime, volume } of candleData) {
         const iso = new Date(Number(closeTime) - interval)
             .toISOString()
             .split('.')[0];
@@ -84,8 +83,13 @@ async function loadOHLCVFile(inputFile, interval, outputDir='.') {
     stream.end();
 }
 
-async function main() {
-    const fileName = process.argv[2];
-    await loadOHLCVFile(fileName, HOUR);
+async function main(inp, out, interval) {
+    await loadOHLCVFile(inp, out, interval);
 }
-main();
+
+if(require.main === module) {
+    const [_a, _b, inp, out, interval] = process.argv;
+    main(inp, out, interval);
+}
+
+module.exports = { loadOHLCVFile };
