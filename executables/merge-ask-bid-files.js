@@ -1,6 +1,6 @@
 const { createWriteStream } = require('fs');
 const { readFile, readdir } = require('fs/promises');
-const { join, dirname } = require('path');
+const { join, dirname, basename } = require('path');
 const { gunzip } = require('zlib');
 const { SingleBar, Presets } = require('cli-progress');
 
@@ -143,7 +143,8 @@ async function writeData(askBidData, interval, writer, meanSpread=0, spreadIdx=0
     }
 }
 
-async function mergeAskBidData(interval, groupedFileNames, root, outputFile) {
+async function mergeAskBidData(intervalStr, groupedFileNames, root, outputFile) {
+    const interval = nominationToInterval(intervalStr);
     const porgressBar = new SingleBar({}, Presets.shades_classic);
     porgressBar.start(groupedFileNames.length, 0);
 
@@ -181,22 +182,23 @@ async function mergeAskBidData(interval, groupedFileNames, root, outputFile) {
 
 async function main(fileNames, preffix, outputDir, interval) {
     const root = dirname(fileNames[0]);
+    fileNames = fileNames.map(f => basename(f));
 
     const grouped = groupFiles(fileNames);
     const sorted  = await sortByDate(grouped);
 
     const outputFile = join(
         outputDir,
-        `${preffix}_${getIntervalNomination(interval)}`
+        `${preffix}_${interval}`
     );
     await mergeAskBidData(interval, sorted, root, outputFile);
 }
 
 if(require.main === module) {
     const folderPath = process.argv[2];
-    const preffix = process.argv[3];
-    const outputDir = process.argv[4];
-    const interval = nominationToInterval(process.argv[5]);
+    const preffix    = process.argv[3];
+    const outputDir  = process.argv[4];
+    const interval   = process.argv[5];
 
     (async () => {
         let files = await readdir(folderPath);

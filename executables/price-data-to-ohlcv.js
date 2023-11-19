@@ -52,7 +52,7 @@ async function getCandlestickData(fileName, interval=5*MINUTE) {
                 return;
             }
 
-            candles.at(-1).addPriceData(Number(volume), Number(price));
+            candles.at(-1).supplementData(Number(volume), Number(price));
         })
         .on('end', () => resolve())
     );

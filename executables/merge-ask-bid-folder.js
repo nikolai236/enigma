@@ -1,4 +1,4 @@
-const { mergeAskBidData, DAY, HOUR, MINUTE } = require('./merge-ask-bid-files');
+const { mergeAskBidData, DAY, HOUR, MINUTE, getIntervalNomination } = require('./merge-ask-bid-files');
 const { existsSync, promises: { readdir, mkdir, rm } } = require('fs');
 const { join } = require('path');
 const { loadOHLCVFile } = require('./price-data-to-ohlcv');
@@ -19,9 +19,9 @@ async function main(inputFolder, outputFolder1, outputFolder2, interval) {
     const preffixes = files
         .map(f => {
             const [first, second] = f.split('_');
-            return first + ['ASK', 'BID'].includes(second) ? '' : second;
+            return first + (['ASK', 'BID'].includes(second) ? '' : '_' + second);
         })
-        .filter((val, i, arr) => arr.indexOf(val) !== i);
+        .filter((val, i, arr) => arr.indexOf(val) === i);
 
     await Promise.all(preffixes.map(async (pref) => {
         const out = join(outputFolder1, pref);
@@ -31,10 +31,10 @@ async function main(inputFolder, outputFolder1, outputFolder2, interval) {
             .filter(f => f.startsWith(pref))
             .map(f => join(inputFolder, f));
 
-        mergeAskBidData(
+        await mergeAskBidData(
             filesToMerge,
             pref,
-            join(outputFolder1),
+            join(outputFolder1, pref),
             interval
         );
     }));
@@ -46,10 +46,12 @@ async function main(inputFolder, outputFolder1, outputFolder2, interval) {
 
         await overwriteFolder(out);
 
-        await Promise.all(
+        const files = await readdir(inp);
+
+        await Promise.all(files.map(f => Promise.all(
             availibleIntervals().map(interval => loadOHLCVFile(
-                inp, out, interval
-            ))
+                join(inp, f), out, getIntervalNomination(interval)
+            ))))
         );
     }));
 }
