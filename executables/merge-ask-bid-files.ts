@@ -27,7 +27,7 @@ export function nominationToInterval(nomination: string) {
     return obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
 }
 
-export function getIntervalNomination(interval: number) {
+export function intervalToNomination(interval: number) {
     const nameObj = {
         D: Math.floor(   interval / DAY),
         H: Math.floor((  interval % DAY) / HOUR),
@@ -38,7 +38,7 @@ export function getIntervalNomination(interval: number) {
     return Object.entries(nameObj)
         .filter(([_, value]) => value != 0)
         .map(([key, value]) => `${value}${key}`)
-        .join()
+        .join();
 }
 
 async function readGzip(data: Buffer) {

@@ -1,6 +1,11 @@
 cp chart/chart.html public
 cp chart/style.css  public
 
+mkdir -p dist
+mkdir -p dist/chart
+mkdir -p dist/executables
+mkdir -p dist/src
+
 tsc --target esnext \
         --module esnext  \
         --outDir dist/chart \

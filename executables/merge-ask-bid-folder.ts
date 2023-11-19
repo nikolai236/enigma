@@ -1,4 +1,4 @@
-import { mergeAskBidData, DAY, HOUR, MINUTE, getIntervalNomination } from './merge-ask-bid-files';
+import { mergeAskBidData, DAY, HOUR, MINUTE, intervalToNomination } from './merge-ask-bid-files';
 import { existsSync } from 'fs';
 import { readdir, mkdir, rm } from 'fs/promises';
 import { join, basename } from 'path';
@@ -10,7 +10,7 @@ const numCpus = availableParallelism();
 
 function availibleIntervals() {
     return [DAY, 4 * HOUR, HOUR, 15 * MINUTE, 5 * MINUTE, MINUTE]
-        .map(i => getIntervalNomination(i));
+        .map(i => intervalToNomination(i));
 }
 
 async function overwriteFolder(path: string) {
@@ -43,13 +43,7 @@ function getMergeAskBidDataPromises(
             .filter(f => f.startsWith(pref))
             .map(f => join(inputDir, f));
 
-        await mergeAskBidData(
-            filesToMerge,
-            pref,
-            out,
-            intervalStr
-        );
-
+        await mergeAskBidData(filesToMerge, pref, out, intervalStr);
         return out;
     });
 }
@@ -98,10 +92,7 @@ async function getAllDrills(
 }
 
 if(require.main === module) {
-    const folderPath = process.argv[2];
-    const outputDir1 = process.argv[3];
-    const outputDir2 = process.argv[4]; 
-    const interval   = process.argv[5];
+    const [folderPath, outputDir1, outputDir2, intervalStr] = process.argv.slice(2);
 
     if(cluster.isPrimary) {
         for(let i = 0; i < numCpus; i++) {
@@ -121,7 +112,7 @@ if(require.main === module) {
         );
 
         const drills = await getAllDrills(
-            folderPath, outputDir1, outputDir2, interval
+            folderPath, outputDir1, outputDir2, intervalStr
         );
     
         const toExecute = drills[idx];
