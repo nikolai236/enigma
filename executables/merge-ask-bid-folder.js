@@ -2,6 +2,8 @@ const { mergeAskBidData, DAY, HOUR, MINUTE, getIntervalNomination } = require('.
 const { existsSync, promises: { readdir, mkdir, rm } } = require('fs');
 const { join } = require('path');
 const { loadOHLCVFile } = require('./price-data-to-ohlcv');
+const cluster = require('cluster');
+const numCpus = require('os').availableParallelism();
 
 function availibleIntervals() {
     return [DAY, 4 * HOUR, HOUR, 15 * MINUTE, 5 * MINUTE, MINUTE];
@@ -12,6 +14,41 @@ async function overwriteFolder(path) {
         await rm(path, { recursive: true });
     }
     await mkdir(path);
+}
+
+function getMergeASkBIdDataPromises(
+    intervalStr, preffixes, files, outputFolder
+) {
+    return preffixes.map(async (pref) => {
+        const out = join(outputFolder, pref);
+        await overwriteFolder(out);
+
+        const filesToMerge = files
+            .filter(f => f.startsWith(pref))
+            .map(f => join(inputFolder, f));
+
+        mergeAskBidData(
+            filesToMerge,
+            pref,
+            join(outputFolder),
+            intervalStr
+        );
+    });
+}
+
+function getOHLCVPromises(assetFolders, inputFolder, outputFolder) {
+    return assetFolders.map(async (folder) => {
+        const inp = join(inputFolder, folder);
+        const out = join(outputFolder, folder);
+
+        await overwriteFolder(out);
+
+        await Promise.all(
+            availibleIntervals().map(interval => loadOHLCVFile(
+                inp, out, interval
+            ))
+        );
+    });
 }
 
 async function main(inputFolder, outputFolder1, outputFolder2, interval) {
@@ -63,4 +100,12 @@ if(require.main === module) {
     const interval   = process.argv[5];
 
     main(folderPath, outputDir1, outputDir2, interval);
+}
+
+if(cluster.isPrimary) {
+    for(let i = 0; i < numCpus; i++) {
+        cluster.fork();
+    }
+
+    cluster.on('exit', () => console.log())
 }
