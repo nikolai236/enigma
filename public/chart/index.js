@@ -4,7 +4,7 @@ function stringDate(date) {
     return Date.UTC(obj.getUTCFullYear(), obj.getUTCMonth(), obj.getUTCDate(), obj.getUTCHours(), obj.getUTCMinutes(), obj.getUTCSeconds()) / 1000;
 }
 async function getOHLCVData() {
-    const resp = await fetch('ohlcv.txt');
+    const resp = await fetch('ES_U22_1s_1H.ohlcv');
     const csvData = await resp.text();
     return csvData
         .split('\n')

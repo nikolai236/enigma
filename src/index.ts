@@ -18,6 +18,7 @@ async function main() {
     const root = await getAppPath() as string;
 
     app.use(express.static(join(root, 'public')));
+    app.use(morgan('dev'))
     app.get('/public/modules/lightweight-charts/lightweight-charts.standalone.production.mjs', (req, res) => {
         res.sendFile(join(root, '/public/modules/lightweight-charts/lightweight-charts.standalone.production.mjs'))
     });

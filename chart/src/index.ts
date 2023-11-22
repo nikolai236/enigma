@@ -13,7 +13,7 @@ function stringDate(date: string) {
 }
 
 async function getOHLCVData() {
-    const resp = await fetch('ohlcv.txt');
+    const resp = await fetch('ES_U22_1s_1H.ohlcv');
     const csvData = await resp.text();
 
     return csvData
@@ -35,7 +35,6 @@ async function main() {
         autoSize: true
     });
     const data = await getOHLCVData();
-    console.log(data[0])
     const series = chart.addCandlestickSeries({
         upColor: '#26a69a',
         downColor: '#ef5350',
