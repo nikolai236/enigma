@@ -20,6 +20,7 @@ tsc --target esnext \
         --module commonjs \
         --outDir dist/executables \
         --moduleResolution node \
+        --esModuleInterop true \
         --allowJS true \
         executables/**.ts &\
     wait
