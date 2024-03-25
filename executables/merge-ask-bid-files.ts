@@ -16,13 +16,12 @@ function toETDate(unixEpoch: number) {
 }
 
 export function nominationToInterval(nomination: string) {
-    const obj = { D: 0, H: 0, m: 0, s: 0 };
-    nomination
+    const obj = nomination
         .split(',')
-        .forEach((e) => {
-            const key = e.slice(-1);
-            obj[key] = Number(e.slice(0, -1));
-        });
+        .reduce((obj, e) => ({
+            ...obj,
+            [e.slice(-1)]: Number(e.slice(0, -1))
+        }), { D: 0, H: 0, m: 0, s: 0 });
 
     return obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
 }

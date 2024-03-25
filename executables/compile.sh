@@ -2,20 +2,20 @@ cp chart/chart.html public
 cp chart/style.css  public
 
 mkdir -p dist
-mkdir -p dist/chart
 mkdir -p dist/executables
 mkdir -p dist/src
+mkdir -p public/chart
 
 tsc --target esnext \
         --module esnext  \
-        --outDir dist/chart \
+        --outDir public/ \
         --moduleResolution node \
-        chart/src/* &\
+        chart/src/**.ts &\
     tsc --target esnext \
         --module commonjs \
-        --outDir dist/src \
+        --outDir dist \
         --moduleResolution node \
-        src/* &\
+        src/**.ts &\
     tsc --target esnext \
         --module commonjs \
         --outDir dist/executables \
@@ -24,9 +24,3 @@ tsc --target esnext \
         --allowJS true \
         executables/**.ts &\
     wait
-
-orignalDir=$PWD
-cd public
-rm -r chart
-mkdir chart
-cp -r $orignalDir/dist/chart/* chart
