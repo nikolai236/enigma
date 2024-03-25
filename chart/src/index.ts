@@ -88,8 +88,6 @@ async function main() {
     });
 
     series.setData(data);
-    const markers = await retreiveMarkers('ES', 'ES_Z23');
-    series.setMarkers(markers);
 
     chart.timeScale().fitContent();
 }
