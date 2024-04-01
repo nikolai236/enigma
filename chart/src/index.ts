@@ -25,47 +25,28 @@ function formatTime(unixEpoch: number) {
     return `${hours}:${minutes} ${day} ${month} '${year}`
 }
 
-async function retreiveCandleData(
-    assetFolder: string, assetName: string, timeframe: '4H'|'1H'|'15m'|'5m'|'1m'
-) {
+async function retreiveCandleData(): Promise<Candle[]|void> {
+    const params = new URLSearchParams(window.location.search);
+
+    const assetName = params.get('assetName');
+    const contractName = params.get('contractName');
+    const tf = params.get('tf') as '4H'|'1H'|'15m'|'5m'|'1m'|null;
+
+    if (assetName == null || tf == null) {
+        return alert('No asset name or timeframe procvided in url params')
+    }
+
     const enc = encodeURIComponent;
-    const resp = await fetch(
-        `/ohlcv/assets/${enc(assetFolder)}/${enc(assetName)}/${timeframe}/`
+    const assetStr = `${enc(assetName)}${contractName == null?'':`/${enc(contractName)}`}`;
+    const url = `/ohlcv/assets/${assetStr}/${tf}`;
+
+    const resp = await fetch(url);
+    if (!resp.ok) return alert(
+        resp.status == 404 ? `Data for ${assetStr} not added to public` : `Something went wrong`
     );
+
     const data = await resp.json();
     return data.candleData as Candle[];
-}
-
-async function retreiveMarkers(
-    assetFolder: string, assetName: string,
-) {
-    const enc = encodeURIComponent;
-    const resp = await fetch(
-        `/ohlcv/assets/${enc(assetFolder)}/${enc(assetName)}/raids/`
-    );
-    const { stopped, ctx } = await resp.json();
-    const ctxMarkers = ctx
-        .map(e => Object.entries(e))
-        .flat(1)
-        .filter(([_, val]) => val?.time != null)
-        .map(([key, val]) => ({ text: key, time: val.time }));
-
-    return [
-        ...ctxMarkers.map(({ time, text }) => ({
-            time,
-            position: 'aboveBar',
-            color: '#f68410',
-            shape: 'circle',
-            text,
-        })),
-        ...stopped.map(time => ({
-            time,
-            position: 'aboveBar',
-            color: '#f68410',
-            shape: 'circle',
-            text: 'Stop',
-        }))
-    ].sort((a, b) => a.time - b.time);
 }
 
 async function main() {
@@ -75,9 +56,7 @@ async function main() {
         },
     );
 
-    const data = await retreiveCandleData(
-        'ES', 'ES_Z23', '15m'
-    );
+    const data = await retreiveCandleData();
 
     const series = chart.addCandlestickSeries({
         upColor: '#26a69a',
