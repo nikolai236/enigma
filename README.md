@@ -10,7 +10,7 @@ To run the backend run go in the git base directory
 `npm start`
 
 ## Disaplay candlestick data
-`http://localhost:5600/chart/html?assetName=EX&contarctName=EX_AMPL23&tf=15m`
+`http://localhost:5600/chart.html?assetName=EX&contarctName=EX_AMPL23&tf=15m`
 
 ## Compile Darwnex ASK/BID data
 To compile an asset ASK/BID data from darwinex
