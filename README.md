@@ -1,6 +1,9 @@
 To run the backend run go in the git base directory
+
 `npm i`
+
 `npm build`
+
 `npm start`
 
 To compile an asset ASK/BID data from darwinex
