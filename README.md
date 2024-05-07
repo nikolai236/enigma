@@ -1,4 +1,4 @@
-# Enigma - Display Darwinex ASK/BID Data as Candles
+# Enigma - Display Darwinex Ask / Bid Data as Candles
 
 ## Run the backend
 To run the backend run go in the git base directory
