@@ -1,4 +1,4 @@
-# Enigma - Compile and Display Candlestick Data for Darwinex ASK/BID data
+# Enigma - Display Darwinex ASK/BID Data as Candles
 
 ## Run the backend
 To run the backend run go in the git base directory
