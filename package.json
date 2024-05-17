@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon -e ts --exec \"npm run compile_and_run\"",
     "compile_and_run": "./executables/compile.sh && node dist/src/",
-    "build": "./executables/compile.sh && ./executables/build.sh",
+    "build": "./executables/build.sh && ./executables/compile.sh",
     "merge_ask_bid_folder": "node ./dist/executables/merge-ask-bid-folder.js",
     "get_ohlcv_file": "node ./dist/executables/price-data-to-ohlcv.js",
     "merge_ask_bid_preffix": "node ./dist/executables/merge-ask-bid-files.js"
