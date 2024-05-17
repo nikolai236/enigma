@@ -7,74 +7,74 @@ export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
 enum TimeFrameEnum {
-    _4H='4H',
-    _1H='1H',
-    _15m='15m',
-    _5m='5m',
-    _1m='1m',
+	_4H='4H',
+	_1H='1H',
+	_15m='15m',
+	_5m='5m',
+	_1m='1m',
 }
 
 function stringToUTCDate(date: string): number {
-    const obj = new Date(date);
-    return Date.UTC(
-        obj.getUTCFullYear(),
-        obj.getUTCMonth(),
-        obj.getUTCDate(),
-        obj.getUTCHours(),
-        obj.getUTCMinutes(),
-        obj.getUTCSeconds(),
-    ) / 1000;
+	const obj = new Date(date);
+	return Date.UTC(
+		obj.getUTCFullYear(),
+		obj.getUTCMonth(),
+		obj.getUTCDate(),
+		obj.getUTCHours(),
+		obj.getUTCMinutes(),
+		obj.getUTCSeconds(),
+	) / 1000;
 }
 
 function readCSV(csvString: string) {
-    return csvString
-        .split('\n')
-        .filter(row => row != '')
-        .map(row => row
-            .split(',')
-            .map(s => isNaN(Number(s)) ? s : Number(s))
-        ).map(([date, open, high, low, close, volume]) => ({
-            time: stringToUTCDate(date as string),
-            open,
-            high,
-            low,
-            close,
-            volume,
-        }));
+	return csvString
+		.split('\n')
+		.filter(row => row != '')
+		.map(row => row
+			.split(',')
+			.map(s => isNaN(Number(s)) ? s : Number(s))
+		).map(([date, open, high, low, close, volume]) => ({
+			time: stringToUTCDate(date as string),
+			open,
+			high,
+			low,
+			close,
+			volume,
+		}));
 }
 
 function getTFs() {
-    return Object
-        .values(TimeFrameEnum)
-        .map(e => e.replace('_', '')) as TimeFrameEnum[];
+	return Object
+		.values(TimeFrameEnum)
+		.map(e => e.replace('_', '')) as TimeFrameEnum[];
 }
 
 export function nominationToInterval(nomination: string) {
-    const obj = { D: 0, H: 0, m: 0, s: 0 };
-    nomination
-        .split(',')
-        .forEach((e) => {
-            const key = e.slice(-1);
-            obj[key] = Number(e.slice(0, -1));
-        });
+	const obj = { D: 0, H: 0, m: 0, s: 0 };
+	nomination
+		.split(',')
+		.forEach((e) => {
+			const key = e.slice(-1);
+			obj[key] = Number(e.slice(0, -1));
+		});
 
-    return obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
+	return obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
 }
 
 async function areTfsParallel(contractDir: string) {
-    const data = {};
-    await Promise.all(getTFs().map(async tf => {
-        const fileName = (await readdir(contractDir))
-            .find(f => f.endsWith(tf + '.ohlcv'))!;
+	const data = {};
+	await Promise.all(getTFs().map(async tf => {
+		const fileName = (await readdir(contractDir))
+			.find(f => f.endsWith(tf + '.ohlcv'))!;
 
-        const buff = await readFile(
-            join(contractDir, fileName)
-        );
+		const buff = await readFile(
+			join(contractDir, fileName)
+		);
 
-        data[tf] = readCSV(buff.toString('binary'));
-    }));
+		data[tf] = readCSV(buff.toString('binary'));
+	}));
 
-    for(const candle of data['4H']) {
-        
-    }
+	for(const candle of data['4H']) {
+		
+	}
 }
