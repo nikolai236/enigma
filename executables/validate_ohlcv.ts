@@ -1,18 +1,11 @@
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
+import { TimeFrameEnum } from '../types/ohlcv';
 
 export const SECOND = 1000;
 export const MINUTE = 60 * SECOND;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
-
-enum TimeFrameEnum {
-	_4H='4H',
-	_1H='1H',
-	_15m='15m',
-	_5m='5m',
-	_1m='1m',
-}
 
 function stringToUTCDate(date: string): number {
 	const obj = new Date(date);

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { readdir, readFile } from 'fs/promises';
 import { resolve, join } from "path";
 import { getContractExpiration, sortContracts } from "../macros/contracts";
-import { Candle } from "../../types/ohlcv";
+import { Candle, TimeFrameEnum } from "../../types/ohlcv";
 
 const router = Router();
 export default router;
@@ -58,14 +58,6 @@ function getTFs() {
 		.map(e => e.replace('_', '')) as TimeFrameEnum[];
 }
 
-enum TimeFrameEnum {
-	_4H='4H',
-	_1H='1H',
-	_15m='15m',
-	_5m='5m',
-	_1m='1m',
-}
-
 export function nominationToInterval(nomination) {
 	const obj = { D: 0, H: 0, m: 0, s: 0 };
 	nomination
@@ -81,9 +73,7 @@ export function nominationToInterval(nomination) {
 
 async function getData(assetDir: string, contractName: string, specificTf?: TimeFrameEnum) {
 	const contractDir = join(assetDir, contractName);
-	console.log(contractDir)
 	if(!contractDir.startsWith(assetDir!)) throw new Error('Unauthorized');
-	console.log(contractDir)
 
 	const ret = {};
 	for(const tf of getTFs()) {
