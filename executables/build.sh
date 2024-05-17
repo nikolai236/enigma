@@ -1,18 +1,15 @@
-npm i
-originalDir=$PWD
-cd public/modules
+yarn
 
-rm -r lightweight-charts
-mkdir lightweight-charts
-
-cp -r \
-    $originalDir/node_modules/lightweight-charts/dist/* \
-    lightweight-charts
-
-cd $originalDir
-rm -f public/chart/modules/lightweight-charts
+rm -f public/chart/modules/lightweight-charts 2> /dev/null || true
 mkdir -p public/chart/modules/lightweight-charts
 
 cp -r \
-    lightweight-charts/* \
+    node_modules/lightweight-charts/dist/* \
     public/chart/modules/lightweight-charts
+
+rm -f chart/modules/lightweight-charts 2> /dev/null || true
+mkdir -p chart/modules/lightweight-charts
+
+cp -r \
+    node_modules/lightweight-charts/dist/* \
+    chart/modules/lightweight-charts
