@@ -3,11 +3,11 @@
 ## Run the backend
 To run the backend run go in the git base directory
 
-`npm i`
+`cat .env.example >> .env`
 
-`npm build`
+`yarn build`
 
-`npm start`
+`yarn start`
 
 ## Disaplay candlestick data
 `http://localhost:5600/chart.html?assetName=EX&contarctName=EX_AMPL23&tf=15m`
