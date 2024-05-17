@@ -1,8 +1,9 @@
 import * as express from 'express';
 import * as morgan from 'morgan';
 import { resolve } from 'path';
-import OHLCVRouter from './routes/ohlcv';
 import "dotenv/config.js";
+
+import OHLCVRouter from './routes/ohlcv';
 
 if(require.main === module) {
     const app = express();
