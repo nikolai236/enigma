@@ -5,6 +5,8 @@ import "dotenv/config.js";
 
 import OHLCVRouter from './routes/ohlcv';
 
+const port = process.env.SERVER_PORT;
+
 if(require.main === module) {
     const app = express();
 
@@ -13,10 +15,10 @@ if(require.main === module) {
 
     app.use('/ohlcv/assets/', OHLCVRouter);
 
-    app.listen(process.env.SERVER_PORT, () => {
+    app.listen(port, () => {
         console.log(
             'Server is running on port:',
-            process.env.SERVER_PORT
+            port
         );
     });
 }
