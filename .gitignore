@@ -3,4 +3,5 @@ dist/*
 public/*
 package-lock.json
 *.DS_Store
+dump.rdp
 chart/modules/*
