@@ -19,3 +19,6 @@ To compile an asset ASK/BID data from darwinex
 3. run `cp -r /path/to/output/ /enigma/public/ohclv/`
 
 ### Project currently has support only for futures data
+
+## Requirements
+bash >= 4.0
