@@ -1,15 +1,26 @@
 yarn
 
-rm -f public/chart/modules/lightweight-charts 2> /dev/null || true
-mkdir -p public/chart/modules/lightweight-charts
+declare -a frontend_dependecies=("lightweight-charts" "fancy-canvas")
+declare -a srcs=("/dist" "/")
 
-cp -r \
-    node_modules/lightweight-charts/dist/* \
-    public/chart/modules/lightweight-charts
+i=0
+for library in "${frontend_dependecies[@]}"
+do
+    src="$library${srcs[i]}"
 
-rm -f chart/modules/lightweight-charts 2> /dev/null || true
-mkdir -p chart/modules/lightweight-charts
+    rm -f public/chart/modules/$library 2> /dev/null || true
+    mkdir -p public/chart/modules/$library
 
-cp -r \
-    node_modules/lightweight-charts/dist/* \
-    chart/modules/lightweight-charts
+    cp -r \
+        node_modules/$src/* \
+        public/chart/modules/$library
+
+    rm -f chart/modules/$library 2> /dev/null || true
+    mkdir -p chart/modules/$library
+
+    cp -r \
+        node_modules/$src/* \
+        chart/modules/$library
+
+    i=$((i+1))
+done

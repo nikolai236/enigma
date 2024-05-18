@@ -1,4 +1,4 @@
-import { Candle, ThreeCandleFormation, TimeFrame } from "../../types/ohlcv";
+import { Candle, ISwing, ThreeCandleFormation, TimeFrame } from "../../types/ohlcv";
 
 export const badSwingInput = new Error('Bad swing input');
 
@@ -35,7 +35,7 @@ export function getChartSwings(candles: Candle[], timeframe: TimeFrame, minThres
  * higher high or a lower low than the other ones. This formation helps us identify where
  * untapped liquidity resides.
  */
-export default class Swing {
+export default class Swing implements ISwing {
 	constructor(
 		public extreme: number,
 		public isHigh: boolean,

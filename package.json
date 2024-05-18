@@ -19,6 +19,7 @@
     "csv-parse": "^5.5.2",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
+    "fancy-canvas": "^2.1.0",
     "ini": "^4.1.1",
     "lightweight-charts": "^4.1.1",
     "morgan": "^1.10.0"

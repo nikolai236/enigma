@@ -10,6 +10,18 @@ export interface Candle {
 
 export type ThreeCandleFormation = [Candle, Candle, Candle];
 
+export interface IFairValueGap {
+	high: number;
+	low: number;
+	time: number;
+}
+
+export interface ISwing {
+	extreme: number;
+	isHigh: boolean;
+	time: number;
+}
+
 export enum TimeFrameEnum {
 	_4H='4H',
 	_1H='1H',
@@ -17,5 +29,4 @@ export enum TimeFrameEnum {
 	_5m='5m',
 	_1m='1m',
 };
-
 export type TimeFrame = keyof typeof TimeFrameEnum;

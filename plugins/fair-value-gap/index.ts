@@ -1,4 +1,4 @@
-import { Candle, ThreeCandleFormation, TimeFrame } from "../../types/ohlcv";
+import { Candle, IFairValueGap, ThreeCandleFormation, TimeFrame } from "../../types/ohlcv";
 
 export const badFvgInput = new Error('Bad fvg input');
 
@@ -55,7 +55,7 @@ export function getChartFvgs(candles: Candle[], timeframe: TimeFrame, minFvgLeng
  * candle 1 and candle 3, this gap is used as a tool for us to recognise "smart money"
  * participation in the marketplace.
 */
-export default class FairValueGap {
+export default class FairValueGap implements IFairValueGap {
 	constructor(
 		public high: number,
 		public low: number,
