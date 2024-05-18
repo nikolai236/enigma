@@ -1,21 +1,21 @@
 import { NextFunction, Request, Response, Router } from "express";
-import { readdir, readFile } from 'fs/promises';
+import { readdir } from 'fs/promises';
 import { resolve, join } from "path";
 import { getContractExpiration, sortContracts } from "../macros/contracts";
-import { Candle, TimeFrameEnum } from "../../types/ohlcv";
+import { Candle, TimeFrame } from "../../types/ohlcv";
+import { getData, isTimeFrameValid, DAY } from "../controllers/ohlcv";
+import pluginRouter from './plugins';
 
 const router = Router();
 export default router;
-
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
 
 declare global {
 	namespace Express {
 		interface Request {
 			context: {
+				candles?: Candle[]; 
+				timeframe?: TimeFrame;
+				contractDir?: string;
 				dataFolders?: string[];
 				assetDir?: string;
 			};
@@ -23,76 +23,23 @@ declare global {
 	}
 }
 
-function stringToUTCDate(date: string): number {
-	const obj = new Date(date);
-	return Date.UTC(
-		obj.getUTCFullYear(),
-		obj.getUTCMonth(),
-		obj.getUTCDate(),
-		obj.getUTCHours(),
-		obj.getUTCMinutes(),
-		obj.getUTCSeconds(),
-	) / 1000;
-}
+router.use('/:assetName/:contractName/:timeframe/plugins/', pluginRouter);
 
-function readCSV(csvString: string) {
-	return csvString
-		.split('\n')
-		.filter(row => row != '')
-		.map(row => row
-			.split(',')
-			.map(s => isNaN(Number(s)) ? s : Number(s))
-		).map(([date, open, high, low, close, volume]) => ({
-			time: stringToUTCDate(date as string),
-			open,
-			high,
-			low,
-			close,
-			volume,
-		})) as Candle[];
-}
+router.use('/:assetName/', validateFolderMiddlware);
+router.use('/:assetName/:contractName/:timeframe/', validateTFandContractDir);
 
-function getTFs() {
-	return Object
-		.values(TimeFrameEnum)
-		.map(e => e.replace('_', '')) as TimeFrameEnum[];
-}
+router.get('/:assetName/', async (req, res) => {
+	return res.json({
+		contracts: sortContracts(req.context.dataFolders!)
+	});
+});
 
-export function nominationToInterval(nomination) {
-	const obj = { D: 0, H: 0, m: 0, s: 0 };
-	nomination
-		.split(',')
-		.forEach((e) => {
-			const key = e.slice(-1);
-			obj[key] = Number(e.slice(0, -1));
-		});
+router.get('/:assetName/:contractName/:timeframe/', async (req, res) => {
+	return res.json({ candleData: req.context.candles });
+});
 
-	const a = obj.D * DAY + obj.H * HOUR + obj.m * MINUTE + obj.s * SECOND;
-	return a;
-}
 
-async function getData(assetDir: string, contractName: string, specificTf?: TimeFrameEnum) {
-	const contractDir = join(assetDir, contractName);
-	if(!contractDir.startsWith(assetDir!)) throw new Error('Unauthorized');
-
-	const ret = {};
-	for(const tf of getTFs()) {
-		if(specificTf != null && specificTf !== tf) continue;
-
-		const fileName = (await readdir(contractDir))
-			.find(f => f.endsWith('_' + tf + '.ohlcv'))!;
-
-		const buff = await readFile(
-			join(contractDir, fileName)
-		);
-
-		ret[tf] = readCSV(buff.toString('binary'));
-	}
-
-	return ret;
-}
-
-async function validateAssetFolder(req: Request, res: Response, next: NextFunction) {
+async function validateFolderMiddlware(req: Request, res: Response, next: NextFunction) {
 	try {
 		const root = resolve('public/ohlcv/');
 		const assetDir = join(root, req.params.assetName);
@@ -101,45 +48,48 @@ async function validateAssetFolder(req: Request, res: Response, next: NextFuncti
 		const dataFolders = await readdir(assetDir);
 
 		req.context ??= {};
-		Object.assign(
-			req.context,
-			{ dataFolders, assetDir },
-		);
+		Object.assign(req.context, { dataFolders, assetDir });
 
 		return next();
 	} catch(err) {
-		console.log(err);
+
+		console.error(err);
 		return res.sendStatus(404);
+
 	}
 }
 
-router.use('/:assetName/', validateAssetFolder);
+async function validateTFandContractDir(req: Request, res: Response, next: NextFunction) {
+	const assetDir = req.context.assetDir!;
+	const { contractName, timeframe } = req.params;
 
-router.get('/:assetName/', async (req, res) => {
-	return res.json({
-		contracts: sortContracts(
-			req.context.dataFolders!
-		),
-	});
-});
+	if(!isTimeFrameValid(timeframe)) {
+		return res.sendStatus(400);
+	}
 
-router.get('/:assetName/:contractName/:timeframe/', async (req, res) => {
-	const assetDir = resolve('public/ohlcv', req.params.assetName);
-	let data: Candle[];
+	const contractDir = join(assetDir, contractName);
+	if(!contractDir.startsWith(assetDir!)) {
+		return res.sendStatus(403);
+	}
+
+	
+	let candles: Candle[];
 	try {
-		data = (await getData(
-			assetDir,
-			req.params.contractName,
-			req.params.timeframe as TimeFrameEnum
-		))[req.params.timeframe];
-		if (data == null) throw new Error('couldnt get data')
+		candles = await getData(contractDir!, timeframe!);
+		if (candles == null) {
+			throw new Error('Something went wrong');
+		}
+		
 	} catch(err) {
-		console.log(err);
+		console.error(err);
 		return res.sendStatus(404);
 	}
 
-	const expireDate = getContractExpiration(req.params.contractName.split('_')[1]);
-	data = data.filter(candle => candle.time * 1000 < expireDate + DAY);
-
-	return res.json({ candleData: data });
-});
+	const [_, contractMonth] = contractName.split('_');
+	candles = candles.filter(candle =>
+		candle.time * 1000 < getContractExpiration(contractMonth) + DAY
+	),
+	
+	Object.assign(req.context, { contractDir, timeframe, candles });
+	return next();
+}
