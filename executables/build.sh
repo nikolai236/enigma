@@ -1,4 +1,4 @@
-#!/bin/bash nikolai
+#!/bin/bash
 
 yarn
 
@@ -22,9 +22,10 @@ do
 
     shopt -s globstar
     for file in chart/modules/$library/**/*.d.ts; do
-        echo "${file%.d.ts}.ts"
-        touch "${file%.d.ts}.ts"
-        cat "$file" >> "${file%.d.ts}.ts"
+        # echo "${file%.d.ts}.ts"
+        # touch "${file%.d.ts}.ts"
+        # cat "$file" >> "${file%.d.ts}.ts"
+        mv "$file" "${file%.d.ts}.ts"
     done
 
     i=$((i+1))
