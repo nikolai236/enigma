@@ -29,4 +29,4 @@ export enum TimeFrameEnum {
 	_5m='5m',
 	_1m='1m',
 };
-export type TimeFrame = keyof typeof TimeFrameEnum;
+export type TimeFrame = (typeof TimeFrameEnum)[keyof typeof TimeFrameEnum];

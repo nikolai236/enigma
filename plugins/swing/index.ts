@@ -43,15 +43,28 @@ export default class Swing implements ISwing {
 		public timeframe: TimeFrame,
 	) {}
 
-	isViolated(pricePoint: number, minThreshhold: number): boolean;
-	isViolated(candle: Candle,     minThreshhold: number): boolean;
+	static getMoreExtreme(stx: Swing, sty: Swing) {
+		if(stx.isHigh !== sty.isHigh) {
+			throw new Error('Incomparable');
+		}
+
+		if(stx.isHigh) return stx.extreme > sty.extreme ?
+			stx : sty;
+		
+		return stx.extreme < sty.extreme ? stx : sty;
+	}
+
+	isViolated(pricePoint: number, minThreshhold?: number): boolean;
+	isViolated(candle: Candle,     minThreshhold?: number): boolean;
 	isViolated(subject: Candle|number, minThreshhold=0) {
 
 		let pricePoint = subject as number;
 		if(typeof subject !== 'number') {
 
 			if(subject.time <= this.time) throw badSwingInput;
-			this.validateCandleAlignsWithExtreme(subject);
+			try {
+				this.validateCandleAlignsWithExtreme(subject);
+			} catch { return false; }
 
 			pricePoint = this.isHigh ? subject.high : subject.low;
 		}

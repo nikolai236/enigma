@@ -10,9 +10,12 @@ export const badFvgInput = new Error('Bad fvg input');
 export function areCandlesFvg(
 	candles: ThreeCandleFormation,
 	timeframe: TimeFrame,
-	minFvgLength=0
+	minFvgLength=0,
+	throwException=true,
 ): FairValueGap|void {
-	if(candles.length !== 3) throw badFvgInput;
+	if(candles.length !== 3)
+		if (throwException) throw badFvgInput;
+		else return;
 
 	const [c1, displ, c3] = candles;
 
@@ -20,11 +23,11 @@ export function areCandlesFvg(
 		
 		const high = c3.low;
 		const low = c1.high;
-
+		
 		if(high <= low + minFvgLength) return;
-		if(displ.open < displ.close) return;
+		if(displ.open > displ.close) return;
 		if(displ.open > c3.high) return;
-
+		
 		return new FairValueGap(high, low, displ.time, timeframe, minFvgLength);
 
 	} else if (c1.low > displ.low) {
@@ -33,7 +36,7 @@ export function areCandlesFvg(
 		const low = c3.high;
 
 		if(low >= high - minFvgLength) return;
-		if(displ.open > displ.close) return;
+		if(displ.open < displ.close) return;
 		if(displ.open < c3.low) return;
 
 		return new FairValueGap(high, low, displ.time, timeframe, minFvgLength);
@@ -42,11 +45,16 @@ export function areCandlesFvg(
 
 export function getChartFvgs(candles: Candle[], timeframe: TimeFrame, minFvgLength=0): FairValueGap[] {
 	return candles
-		.map((_, i) => areCandlesFvg(
-			candles.slice(i, i+3) as ThreeCandleFormation,
-			timeframe,
-			minFvgLength
-		))
+		.slice(0, -2)
+		.map((_, i) => {
+			const ret = areCandlesFvg(
+				candles.slice(i, i+3) as ThreeCandleFormation,
+				timeframe,
+				minFvgLength,
+				false,
+			);
+			return ret;
+		})
 		.filter((fvg): fvg is FairValueGap => fvg != null);
 
 }

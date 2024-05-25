@@ -1,7 +1,6 @@
 import { Candle } from "../../types/ohlcv";
 
 export function findSwings(data: Candle[]) {
-	console.log(data.length)
 	let leg: 0|1|2 = 0;
 
 	const highs: (Candle & { idx?: number })[] = [];

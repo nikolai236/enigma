@@ -1,16 +1,23 @@
+import { TimeFrameEnum } from "../../types/ohlcv.js";
 import PluginManager from "./plugins/index.js";
 
 declare global {
 	interface Window {
-		pm: PluginManager;
+		pm: Partial<PluginManager>;
 	}
 }
 
 async function main() {
-	window.pm = new PluginManager(
-		new URLSearchParams(window.location.search)
+	const manager = new PluginManager(
+		new URLSearchParams(window.location.search),
 	);
 
-	await window.pm.loadCandlesFromParams();
+	window.pm = {
+		loadCandlesFromParams: manager.loadCandlesFromParams.bind(manager),
+		loadFVGs: manager.loadFVGs.bind(manager),
+		seeMss: manager.seeMss.bind(manager),
+	};
+
+	await window.pm.loadCandlesFromParams!();
 }
 main();

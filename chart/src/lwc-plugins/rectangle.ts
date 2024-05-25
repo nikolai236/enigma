@@ -7,7 +7,6 @@ import {
 	ISeriesPrimitiveAxisView
 } from "../../modules/lightweight-charts/typings.js";
 import { isBusinessDay } from "../../modules/lightweight-charts/lightweight-charts.standalone.development.mjs";
-import { CanvasRenderingTarget2D } from "../../modules/fancy-canvas";
 import { positionsBox, PluginBase } from "./index.js";
 
 class RectanglePaneRenderer implements ISeriesPrimitivePaneRenderer {
@@ -21,8 +20,7 @@ class RectanglePaneRenderer implements ISeriesPrimitivePaneRenderer {
 		this._fillColor = fillColor;
 	}
 
-    // @ts-ignore
-	draw(target: CanvasRenderingTarget2D) {
+	draw(target) {
 		target.useBitmapCoordinateSpace(scope => {
 			if (
 				this._p1.x === null ||
@@ -78,7 +76,6 @@ class RectanglePaneView implements ISeriesPrimitivePaneView {
 		this._p2 = { x: x2, y: y2 };
 	}
 
-    // @ts-ignore
 	renderer() {
 		return new RectanglePaneRenderer(
 			this._p1,
@@ -106,8 +103,7 @@ class RectangleAxisPaneRenderer implements ISeriesPrimitivePaneRenderer {
 		this._vertical = vertical;
 	}
 
-    // @ts-ignore
-	draw(target: CanvasRenderingTarget2D) {
+	draw(target) {
 		target.useBitmapCoordinateSpace(scope => {
 			if (this._p1 === null || this._p2 === null) return;
 			const ctx = scope.context;
@@ -144,7 +140,6 @@ abstract class RectangleAxisPaneView implements ISeriesPrimitivePaneView {
 		[this._p1, this._p2] = this.getPoints();
 	}
 
-    // @ts-ignore
 	renderer() {
 		return new RectangleAxisPaneRenderer(
 			this._p1,
@@ -231,7 +226,7 @@ class RectanglePriceAxisView extends RectangleAxisView {
 	}
 }
 
-interface Point {
+export interface Point {
 	time: Time;
 	price: number;
 }
@@ -251,7 +246,7 @@ export const defaultOptions: RectangleDrawingToolOptions = {
 	previewFillColor: 'rgba(200, 50, 100, 0.25)',
 	labelColor: 'rgba(200, 50, 100, 1)',
 	labelTextColor: 'white',
-	showLabels: true,
+	showLabels: false,
 	priceLabelFormatter: (price: number) => price.toFixed(2),
 	timeLabelFormatter: (time: Time) => {
 		if (typeof time == 'string') return time;

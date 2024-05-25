@@ -2,19 +2,20 @@ import { createChart } from "../../modules/lightweight-charts/lightweight-charts
 import { IChartApi, ISeriesApi, Time } from "../../modules/lightweight-charts/typings.js";
 
 import { IFairValueGap, TimeFrame, Candle } from "../../../types/ohlcv.js";
-import { formatTime } from "../helpers/dates.js";
-import Rectangle, { defaultOptions } from "../lwc-plugins/rectangle.js";
+import { MINUTE, SECOND, formatTime, nominationToInterval } from "../helpers/dates.js";
+import Rectangle, { defaultOptions, Point } from "../lwc-plugins/rectangle.js";
 
-function stringToUTCDate(date: string): Time {
-	const obj = new Date(date);
-	return Date.UTC(
-		obj.getUTCFullYear(),
-		obj.getUTCMonth(),
-		obj.getUTCDate(),
-		obj.getUTCHours(),
-		obj.getUTCMinutes(),
-		obj.getUTCSeconds(),
-	) / 1000 as Time;
+type Series = ISeriesApi<'Candlestick'>;
+
+class FVG {
+	rectangle: Rectangle;
+
+	constructor(fvg: IFairValueGap, extent: number, series: Series) {
+		const p1 = { price: fvg.high, time: fvg.time } as Point;
+		const p2 = { price: fvg.low, time: fvg.time + extent } as Point;
+
+		series.attachPrimitive(new Rectangle(p2, p1));
+	} // TODO: some fvgs if they are big enough fo not show but are still taken into account (1691161200)
 }
 
 export default class PluginManager {
@@ -23,9 +24,11 @@ export default class PluginManager {
 	public candles: Candle[] = [];
 
 	public chart: IChartApi;
-	public series: ISeriesApi<'Candlestick'>;
+	public series: Series;
 
 	private assetUrl: string;
+
+	public fvgs: FVG[];
 
 	constructor(params: URLSearchParams) {
 		const assetName    = params.get('assetName');
@@ -71,19 +74,38 @@ export default class PluginManager {
 			wickDownColor: '#ef5350'
 		});
 
-		series.setData(this.candles);
+		this.series = series;
+		// @ts-ignore
+		this.series.setData(this.candles);
 		chart.timeScale().fitContent();
-
-		const r = new Rectangle({ price: 4206, time: '2023-08-23'  }, { price: 4306, time: '2023-10-23'  });
-		series.attachPrimitive(r);
-		console.log(r);
 	}
 
 	public async loadFVGs(tf: TimeFrame) {
-		return;
 		const url = `${this.buildPluginsUrl(tf)}/fvgs/`;
 		const result = await (await fetch(url)).json();
 		const fvgs = result.fvgs as IFairValueGap[];
+
+		const extent = 10 * nominationToInterval(tf) / SECOND;
+		this.fvgs = fvgs.slice(0, 35).map(fvg => new FVG(fvg, extent, this.series));
+	}
+
+	public async seeMss() {
+		const url = `${this.buildPluginsUrl(this.tf)}/mss/`;
+		const { start, stop } = await (await fetch(url)).json();
+
+		this.series.setMarkers([...stop.map(time => ({
+			time: time,
+			position: 'aboveBar', 
+			color: '#f68410', 
+			shape: 'circle', 
+			text: 'B'
+		})), ...start.map(time => ({
+			time: time,
+			position: 'belowBar', 
+			color: '#f68410', 
+			shape: 'circle', 
+			text: 'A'
+		}))].sort((a, b) => a.time - b.time));
 	}
 
 	private buildPluginsUrl(tf: TimeFrame) {

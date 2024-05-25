@@ -23,10 +23,11 @@ declare global {
 	}
 }
 
-router.use('/:assetName/:contractName/:timeframe/plugins/', pluginRouter);
 
 router.use('/:assetName/', validateFolderMiddlware);
 router.use('/:assetName/:contractName/:timeframe/', validateTFandContractDir);
+
+router.use('/:assetName/:contractName/:timeframe/plugins/', pluginRouter);
 
 router.get('/:assetName/', async (req, res) => {
 	return res.json({
@@ -72,7 +73,6 @@ async function validateTFandContractDir(req: Request, res: Response, next: NextF
 		return res.sendStatus(403);
 	}
 
-	
 	let candles: Candle[];
 	try {
 		candles = await getData(contractDir!, timeframe!);
