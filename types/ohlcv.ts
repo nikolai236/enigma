@@ -22,6 +22,22 @@ export interface ISwing {
 	time: number;
 }
 
+export interface IRange {
+	high: number;
+	low: number;
+
+	openTime: number;
+	closeTime: number;
+
+	candles: Candle[];
+}
+
+export enum PDEnum {
+	Premium,
+	Equilibrium,
+	Discount,
+}
+
 export enum TimeFrameEnum {
 	_4H='4H',
 	_1H='1H',

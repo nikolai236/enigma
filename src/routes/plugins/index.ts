@@ -2,7 +2,8 @@ import { Router } from "express";
 
 import swingRouter from "./swing";
 import fvgRouter from "./fair-value-gap";
-import { checkForMSS, checkForMSSWithFVG } from "../../../plugins/market-structure-shift.ts";
+import { checkForMSS, checkForMSSWithFVG } from "../../../plugins/market-structure-shift";
+import { CandleRange } from "../../../plugins/range";
 
 const router = Router();
 export default router;

@@ -1,21 +1,51 @@
+import { CandleRange } from "./candle-range";
+import { DAY, getMidnightOpen } from "../../helpers";
+import { Candle, PDEnum } from "../../types/ohlcv";
 
-class DailyRange {
-    public day: Date;
+export function getDailyRanges(candles: Candle[]): CandleRange[] {
+    const rangesObject = candles
+        .map(c => [c, getMidnightOpen(c.time).toString()] as [Candle, string])
+        .reduce((ret, [c, key]) => ({
+            ...ret,
+            [key]: ret[key] ? [...ret[key], c] : [c],
+        }), {});
 
-    constructor(date: Date) {
-        date.setHours(0, 0, 0, 0);
+    return Object.keys(rangesObject)
+        .map(k => new DailyRange(new Date(k), rangesObject[k]))
+        .sort((a, b) => a.openTime - b.openTime);
+}
 
-        const nyHour = date
-            .toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-                hour: '2-digit',
-                hour12: false,
-            })
-            .slice(0, 2);
+export function checkDRPDForTimePoints(toCheck: { time: number; }[], allCandles: Candle[]) {
+    const pds = [] as PDEnum[];
+    const dailyRanges = getDailyRanges(allCandles);
 
-        const offset = (nyHour == "00" ? -4 : -5) * 60 * 60 * 1000;
-        const nyTime = date.getTime() + offset;
+    let i = 0;
+    let j = 0;
 
-        this.day = new Date(nyTime);
+    while(i < dailyRanges.length && j < toCheck.length) {
+        const dr = dailyRanges[i];
+        const { time } = toCheck[j];
+
+        if (!dr.contains(time)) {
+            i++;
+            continue;
+        }
+
+        const pd = dr.getPremiumDiscountAtTime(time);
+        pds.push(pd);
+        j++;
+    }
+
+    if (pds.length !== toCheck.length) {
+        throw new Error('Invlaid input');
+    }
+
+    const mnos = dailyRanges.map(dr => dr.open);
+    return { pds, mnos };
+}
+
+export class DailyRange extends CandleRange {
+    constructor(openTime: Date, candles: Candle[]) {
+        super(DAY, openTime, candles);
     }
 }
