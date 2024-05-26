@@ -2,6 +2,8 @@ import { CandleRange } from "./candle-range";
 import { DAY, getMidnightOpen } from "../../helpers";
 import { Candle, PDEnum } from "../../types/ohlcv";
 
+export * from './candle-range';
+
 export function getDailyRanges(candles: Candle[]): CandleRange[] {
 	const rangesObject = candles
 		.map(c => [c, getMidnightOpen(c.time).toString()] as [Candle, string])
