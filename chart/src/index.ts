@@ -12,13 +12,13 @@ async function main() {
 		new URLSearchParams(window.location.search),
 	);
 
-	window.pm = {
-		loadCandlesFromParams: manager.loadCandlesFromParams.bind(manager),
-		loadFVGs: manager.loadFVGs.bind(manager),
-		showMNOs: manager.showMNOs.bind(manager),
-		seeMss: manager.seeMss.bind(manager),
-		isMSSinDiscount: manager.isMSSinDiscount.bind(manager),
-	};
+	window.pm = new (function() {
+		this.loadCandlesFromParams = manager.loadCandlesFromParams.bind(manager);
+		this.loadFVG = manager.loadFVGs.bind(manager);
+		this.showMNOs = manager.showMNOs.bind(manager);
+		this.seeMss = manager.seeMss.bind(manager);
+		this.isMSSinDiscount = manager.isMSSinDiscount.bind(manager);
+	})();
 
 	await window.pm.loadCandlesFromParams!();
 }

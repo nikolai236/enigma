@@ -43,7 +43,7 @@ export default class Swing implements ISwing {
 		public timeframe: TimeFrame,
 	) {}
 
-	static getMoreExtreme(stx: Swing, sty: Swing) {
+	static maxExtreme(stx: Swing, sty: Swing) {
 		if(stx.isHigh !== sty.isHigh) {
 			throw new Error('Incomparable');
 		}

@@ -34,7 +34,5 @@ router.get('/mss-in-discount/', (req, res) => {
     markers.stop = markers.stop.filter((_, i) => pds[i] !== PDEnum.Premium);
     markers.start = markers.start.filter((_, i) => pds[i] !== PDEnum.Premium);
 
-    return res.json({
-        markers, mnos
-    });
+    return res.json({ markers, mnos });
 });

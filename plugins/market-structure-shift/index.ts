@@ -1,6 +1,6 @@
 import { MINUTE, SECOND } from "../../executables/merge-ask-bid-files";
 import { Candle, TimeFrame, ThreeCandleFormation } from "../../types/ohlcv";
-import { getChartFvgs } from "../fair-value-gap";
+import { findFVGsInCandles } from "../fair-value-gap";
 import Swing, { areCandlesSwing } from "../swing";
 
 export function checkForMSS(bullish: boolean, candles: Candle[], timeframe: TimeFrame) {
@@ -31,67 +31,99 @@ export function checkForMSS(bullish: boolean, candles: Candle[], timeframe: Time
 		}
 
 		sty = sty === undefined ?
-			swing : Swing.getMoreExtreme(swing as Swing, sty);
+			swing : Swing.maxExtreme(swing as Swing, sty);
 	}
 
 	return ret;
 }
 
+/*
+	This is an algorithm that finds Market Structure Shifts within an array of candles.
+	These are short-term changes in market sentiment e.g. shift from bearish to bullish.
+
+	The fair value gap indicates a change in narrative with an instutional sponsorship behind
+	the shift, making it a lot stronger of a confirmation for a all-out reversal
+
+	The function returns two arrays with the same size, one with counter-narrative origin swings
+	labeled 'start', where a hypothetical stop-loss would be placed and another labeled 'stop'
+	showing the acutal MSS occurring.
+
+	The algotithm looks for a shift to happen, then looks for a FVG inside that leg, if it does not
+	find one discrads the MSS and looks for the next high to be taken wth FVG. It will not return shifts
+	where the FVG occured after the high was violated
+*/
+
+// TODO algo gives 'incorrect' SL when the MSS candle is the protetcted low low
 export function checkForMSSWithFVG(bullish: boolean, candles: Candle[], timeframe: TimeFrame) {
-	const ret = { start: [], stop: [] } as { start: number[], stop: number[] };
+	const ret: { start: number[], stop: number[] } = { start: [], stop: [] };
+
+	/* The last of these swings in this array is the swing 
+		violated fro the MSS to occur e. g. a swing high when bullish */
 	let stxs: Swing[] = [];
+
+	/* This is either the most extreme, counter-narrative swing
+		after the violated swing was if such does not exist
+		the one prior to the violation swing created is taken */
 	let sty: Swing|undefined;
 
 	let mssLegIdx: number|undefined = undefined;
 	let oldMssLegIdx: number|undefined  = undefined;
 
 	const reset = () => {
-		stxs = [];
 		sty = undefined;
-		oldMssLegIdx = mssLegIdx;
+		oldMssLegIdx = undefined;
 		mssLegIdx = undefined;
 	};
 
-	for(let i=1; i<candles.length-2; i++) {
-		// const log = () => 1692219600 <= candles[i].time && candles[i].time <= 1692262800;
-		// if (log()) console.log(candles[i].time, mssLegIdx && candles[mssLegIdx].time, sty?.time, stxs.at(-1)?.time);
-		if (stxs.length > 0 && stxs.at(-1)!.isViolated(candles[i]) && stxs.at(-1)!.time !== candles[i].time) {
-			if(mssLegIdx == null && oldMssLegIdx == null) {
-				stxs = [];
-				reset();
-			} else {
-				const leg = candles.slice(mssLegIdx ?? oldMssLegIdx!, i+2);
-				const fvgs = getChartFvgs(leg, timeframe);
-
-				if(fvgs.length !== 0) {
-					ret.stop.push(candles[i].time);
-					ret.start.push(candles[mssLegIdx ?? oldMssLegIdx!].time);
-
-					stxs = [];
-					reset();
-				}
-
-				stxs.pop();
-				reset()
-			}
+	const handleViolated = (violationIdx: number) => {
+		if(mssLegIdx == null && oldMssLegIdx == null) {
+			stxs = [];
+			return reset();
 		}
 
-		const swing = areCandlesSwing(
-			candles.slice(i-1, i+2) as ThreeCandleFormation,
-			timeframe,
-		);
+		const legIdx = mssLegIdx ?? oldMssLegIdx!;
+		const leg = candles.slice(legIdx-1, violationIdx+2);
+		const fvgs = findFVGsInCandles(leg, timeframe);
 
-		if(swing === undefined) continue;
-		if (bullish === swing.isHigh) {
-			reset();
-			stxs.push(swing);
+		if(fvgs.length !== 0) {
+			ret.stop.push(candles[violationIdx].time);
+			ret.start.push(candles[legIdx].time);
+
+			stxs = [];
+		}
+
+		stxs.pop();
+		return reset();
+	}
+
+	for(let i=1; i<candles.length-2; i++) {
+		if (
+			stxs.length > 0 &&
+			stxs.at(-1)!.isViolated(candles[i]) &&
+			stxs.at(-1)!.time !== candles[i].time
+		) {
+			handleViolated(i);
+		}
+
+		const potentialSwing = candles.slice(i-1, i+2) as ThreeCandleFormation;
+		const swing = areCandlesSwing(potentialSwing, timeframe);
+
+		if(swing == undefined) {
 			continue;
 		}
-		
-		if (mssLegIdx === oldMssLegIdx) sty = undefined;
+
+		if (bullish === swing.isHigh) {
+			sty = undefined;
+			oldMssLegIdx = mssLegIdx;
+			mssLegIdx = undefined;
+			stxs.push(swing);
+
+			continue;
+		}
+
 		sty = sty === undefined ?
-			swing : Swing.getMoreExtreme(swing as Swing, sty);
-		
+			swing : Swing.maxExtreme(swing, sty);
+
 		if (sty === swing) {
 			oldMssLegIdx = mssLegIdx;
 			mssLegIdx = i;
