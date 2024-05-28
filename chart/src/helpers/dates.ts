@@ -11,15 +11,16 @@ export function monthToString(idx: number): string {
 }
 
 export function formatTime(unixEpoch: number) {
-	const date = new Date(unixEpoch * 1000);
+	return new Date(unixEpoch * SECOND)
+		.toLocaleString('en-US', {
+			timeZone: "America/New_York",
+			day: "numeric",
+			month: "short",
+			year: "2-digit",
+			hour: "numeric",
+			minute: "2-digit"
+		});
 
-	const hours = date.getHours().toString().padStart(2, '0');
-	const minutes = date.getMinutes().toString().padStart(2, '0');
-	const day = weekDayToString(date.getDay());
-	const month = monthToString(date.getMonth());
-	const year = date.getFullYear() - 2000;
-
-	// return `${hours}:${minutes} ${day} ${month} '${year}`
 	return unixEpoch;
 }
 

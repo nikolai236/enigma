@@ -15,7 +15,9 @@ async function main() {
 	window.pm = {
 		loadCandlesFromParams: manager.loadCandlesFromParams.bind(manager),
 		loadFVGs: manager.loadFVGs.bind(manager),
+		showMNOs: manager.showMNOs.bind(manager),
 		seeMss: manager.seeMss.bind(manager),
+		isMSSinDiscount: manager.isMSSinDiscount.bind(manager),
 	};
 
 	await window.pm.loadCandlesFromParams!();

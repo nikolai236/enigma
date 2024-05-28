@@ -26,7 +26,7 @@ export class Range implements IRange {
 		return (this.high + this.low) / 2;
 	}
 
-	constructor(openTime: Date|number, closeTime: Date|number, candles: Candle[]) {
+	constructor(openTime: Date|number, closeTime: Date|number, candles: Candle[], strict=true) {
 		if (candles.length === 0) {
 			throw new Error('Candle array cannot be empty');
 		}
@@ -42,13 +42,15 @@ export class Range implements IRange {
 		}
 		this.closeTime = closeTime;
 
-		const invalidCandleInput = new Error('Invalid candles inputted');
+		const invalidCandleInput = new Error(`Invalid candles inputted ${this.openTime}`);
 
-		if(this.candles[0].time > openTime) {
+		if(strict && this.candles[0].time > openTime) {
+			console.log('1')
 			throw invalidCandleInput;
 		}
 
-		if(this.candles[0].time < openTime) {
+		if(strict && this.candles[0].time < openTime) {
+			console.log('2')
 			let i = 0;
 			const len = this.candles.length;
 			while(i < len && this.candles[i].time !== this.openTime) { i++; }
@@ -57,11 +59,13 @@ export class Range implements IRange {
 			this.candles = this.candles.slice(i);
 		}
 
-		if (this.candles.at(-1)!.time < this.closeTime) {
+		if (strict && this.candles.at(-1)!.time < this.closeTime) {
+			console.log('3')
 			throw invalidCandleInput;
 		}
 
-		if(this.candles.at(-1)!.time > closeTime) {
+		if(strict && this.candles.at(-1)!.time > closeTime) {
+			console.log('4')
 			let i = this.candles.length - 1;
 			while(i <= 0 && this.candles[i].time !== this.closeTime) { i--; }
 
@@ -86,11 +90,15 @@ export class Range implements IRange {
 }
 
 export class CandleRange extends Range {
-	constructor(public length: number, openTime: Date, candles: Candle[]) {
+	constructor(public length: number, openTime: Date, candles: Candle[], strict=true) {
 		const open = dateToUnixEpoch(openTime);
 		const close = open + length / SECOND;
 
-		super(open, close, candles);
+		// console.log(new Date(open * SECOND).toLocaleString('en-US', {
+		// 	timeZone: 'America/New_York'
+		// }))
+
+		super(open, close, candles, strict);
 	}
 
 	public contains(unixEpoch: number): boolean;
@@ -109,9 +117,10 @@ export class CandleRange extends Range {
 		if (typeof arg === 'number') {
 			arg = this.candles.find(c => c.time === arg)!;
 			if (arg === undefined) {
-				throw new Error(
-					'argument unixEpoch must be a specific time of a candle'
-				);
+				arg = this.candles.at(-1)!;
+				// throw new Error(
+				// 	'argument unixEpoch must be a specific time of a candle'
+				// );
 			}
 		}
 
@@ -123,12 +132,12 @@ export class CandleRange extends Range {
 		if (end && !this.contains(end)) {
 			throw new Error('argument otiside of daily time range');
 		}
-		end ??= this.closeTime;
+		end ??= this.candles.at(-1)!.time;
 
 		let i = 0;
-		while (this.candles[i].time <= end) { i++; }
+		while (i < this.candles.length && this.candles[i].time <= end) { i++; }
 		const rangeCandles = this.candles.slice(0, i+1);
 
-		return new Range(this.openTime, end, rangeCandles);
+		return new Range(this.openTime, end, rangeCandles, false);
 	}
 }

@@ -1,24 +1,25 @@
 import { CandleRange } from "./candle-range";
-import { DAY, getMidnightOpen } from "../../helpers";
+import { DAY, SECOND, dateToUnixEpoch, getMidnightOpen, isDuringDST } from "../../helpers";
 import { Candle, PDEnum } from "../../types/ohlcv";
 
 export * from './candle-range';
 
-export function getDailyRanges(candles: Candle[]): CandleRange[] {
+export function getDailyRanges(candles: Candle[]) {
 	const rangesObject = candles
 		.map(c => [c, getMidnightOpen(c.time).toString()] as [Candle, string])
-		.reduce((ret, [c, key]) => ({
+		.filter(([_, mno], _i, arr) => mno !== arr.at(0)?.[1] &&  mno !== arr.at(-1)?.[1])
+		.reduce<{ [k: string]: Candle[] }>((ret, [c, key]) => ({
 			...ret,
-			[key]: ret[key] ? [...ret[key], c] : [c],
+			[key]: key in ret ? [...ret[key], c] : [c],
 		}), {});
 
-	return Object.keys(rangesObject)
-		.map(k => new DailyRange(new Date(k), rangesObject[k]))
+	return Object.entries(rangesObject)
+		.map(([k, e]) => new DailyRange(new Date(k), e))
 		.sort((a, b) => a.openTime - b.openTime);
 }
 
 export function checkDRPDForTimePoints(toCheck: { time: number; }[], allCandles: Candle[]) {
-	const pds = [] as PDEnum[];
+	const pds: PDEnum[] = [];
 	const dailyRanges = getDailyRanges(allCandles);
 
 	let i = 0;
@@ -38,16 +39,16 @@ export function checkDRPDForTimePoints(toCheck: { time: number; }[], allCandles:
 		j++;
 	}
 
-	if (pds.length !== toCheck.length) {
-		throw new Error('Invlaid input');
-	}
+	// if (pds.length !== toCheck.length) {
+	// 	throw new Error('Invalid input');
+	// }
 
-	const mnos = dailyRanges.map(dr => dr.open);
+	const mnos = dailyRanges.map(dr => dr.openTime);
 	return { pds, mnos };
 }
 
 export class DailyRange extends CandleRange {
 	constructor(openTime: Date, candles: Candle[]) {
-		super(DAY, openTime, candles);
+		super(DAY, openTime, candles, false);
 	}
 }

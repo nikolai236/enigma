@@ -18,3 +18,10 @@ export function fromEST(date: Date, hours: number, minutes=0) {
         .minutes(minutes)
         .toDate()
 }
+
+export function isDuringDST(date: Date) {
+    return moment
+        .utc(date)
+        .tz('America/New_York')
+        .isDST();
+}

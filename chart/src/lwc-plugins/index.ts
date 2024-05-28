@@ -8,7 +8,6 @@ import {
 	SeriesAttachedParameter,
 } from "../../modules/lightweight-charts/typings.js";
 
-
 // https://github.com/tradingview/lightweight-charts/blob/master/plugin-examples/src/plugins/plugin-base.ts
 export abstract class PluginBase implements ISeriesPrimitive<Time>{
 	private _chart?: IChartApi;
@@ -55,6 +54,13 @@ export interface BitmapPositionLength {
 	length: number;
 }
 
+/**
+ * Determines the bitmap position and length for a dimension of a shape to be drawn.
+ * @param position1Media - media coordinate for the first point
+ * @param position2Media - media coordinate for the second point
+ * @param pixelRatio - pixel ratio for the corresponding axis (vertical or horizontal)
+ * @returns Position of of the start point and length dimension.
+ */
 export function positionsBox(
 	position1Media: number,
 	position2Media: number,
@@ -77,4 +83,33 @@ export function ensureDefined<T>(value: T | undefined): T {
 	}
 
 	return value;
+}
+
+function centreOffset(lineBitmapWidth: number): number {
+	return Math.floor(lineBitmapWidth * 0.5);
+}
+
+/**
+ * Calculates the bitmap position for an item with a desired length (height or width), and centred according to
+ * an position coordinate defined in media sizing.
+ * @param positionMedia - position coordinate for the bar (in media coordinates)
+ * @param pixelRatio - pixel ratio. Either horizontal for x positions, or vertical for y positions
+ * @param desiredWidthMedia - desired width (in media coordinates)
+ * @returns Position of of the start point and length dimension.
+ */
+export function positionsLine(
+	positionMedia: number,
+	pixelRatio: number,
+	desiredWidthMedia: number = 1,
+	widthIsBitmap?: boolean
+): BitmapPositionLength {
+
+	const scaledPosition = Math.round(pixelRatio * positionMedia);
+	const lineBitmapWidth = widthIsBitmap ?
+		desiredWidthMedia : Math.round(desiredWidthMedia * pixelRatio);
+
+	const offset = centreOffset(lineBitmapWidth);
+	const position = scaledPosition - offset;
+
+	return { position, length: lineBitmapWidth };
 }
