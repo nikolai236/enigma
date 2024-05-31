@@ -1,18 +1,18 @@
 import { TimeFrameEnum } from "../../types/ohlcv.js";
-import PluginManager from "./plugins/index.js";
+import StartegyManager from "./strategies/index.js";
 
 declare global {
 	interface Window {
-		pm: Partial<PluginManager>;
+		sm: Partial<StartegyManager>;
 	}
 }
 
 async function main() {
-	const manager = new PluginManager(
+	const manager = new StartegyManager(
 		new URLSearchParams(window.location.search),
 	);
 
-	window.pm = new (function() {
+	window.sm = new (function() {
 		this.loadCandlesFromParams = manager.loadCandlesFromParams.bind(manager);
 		this.loadFVG = manager.loadFVGs.bind(manager);
 		this.showMNOs = manager.showMNOs.bind(manager);
@@ -20,6 +20,6 @@ async function main() {
 		this.isMSSinDiscount = manager.isMSSinDiscount.bind(manager);
 	})();
 
-	await window.pm.loadCandlesFromParams!();
+	await window.sm.loadCandlesFromParams!();
 }
 main();

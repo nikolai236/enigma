@@ -4,7 +4,7 @@ import { resolve, join } from "path";
 import { getContractExpiration, sortContracts } from "../macros/contracts";
 import { Candle, TimeFrame } from "../../types/ohlcv";
 import { getData, isTimeFrameValid, DAY } from "../controllers/ohlcv";
-import pluginRouter from './plugins';
+import startegyRouter from './startegies';
 
 const router = Router();
 export default router;
@@ -27,7 +27,7 @@ declare global {
 router.use('/:assetName/', validateFolderMiddlware);
 router.use('/:assetName/:contractName/:timeframe/', validateTFandContractDir);
 
-router.use('/:assetName/:contractName/:timeframe/plugins/', pluginRouter);
+router.use('/:assetName/:contractName/:timeframe/strategies/', startegyRouter);
 
 router.get('/:assetName/', async (req, res) => {
 	return res.json({
