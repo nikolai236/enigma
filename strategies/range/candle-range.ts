@@ -1,5 +1,5 @@
-import { Candle, IRange, PDEnum } from "../../types/ohlcv";
-import { dateToUnixEpoch, SECOND } from "../../helpers/";
+import { Candle, IFairValueGap, IRange, PDEnum } from "../../types/ohlcv";
+import { dateToUnixEpoch, SECOND } from "../../helpers";
 
 export class Range implements IRange {
 	public candles: Candle[];
@@ -45,12 +45,10 @@ export class Range implements IRange {
 		const invalidCandleInput = new Error(`Invalid candles inputted ${this.openTime}`);
 
 		if(strict && this.candles[0].time > openTime) {
-			console.log('1')
 			throw invalidCandleInput;
 		}
 
 		if(strict && this.candles[0].time < openTime) {
-			console.log('2')
 			let i = 0;
 			const len = this.candles.length;
 			while(i < len && this.candles[i].time !== this.openTime) { i++; }
@@ -60,12 +58,10 @@ export class Range implements IRange {
 		}
 
 		if (strict && this.candles.at(-1)!.time < this.closeTime) {
-			console.log('3')
 			throw invalidCandleInput;
 		}
 
 		if(strict && this.candles.at(-1)!.time > closeTime) {
-			console.log('4')
 			let i = this.candles.length - 1;
 			while(i <= 0 && this.candles[i].time !== this.closeTime) { i--; }
 
@@ -76,8 +72,21 @@ export class Range implements IRange {
 		this.update();
 	}
 
+	getPremiumFVGs(fvgs: IFairValueGap[]) {
+		return fvgs.filter(fvg =>
+			fvg.low < this.high && fvg.low > this.equilibrium
+		);
+	}
+
+	getDiscountFVGs(fvgs: IFairValueGap[]) {
+		return fvgs.filter(fvg =>
+			fvg.high > this.low && fvg.high < this.equilibrium
+		);
+	}
+
 	getPremiumDiscount(price?: number) {
 		price ??= this.close;
+
 		return price > this.equilibrium ?
 			PDEnum.Premium : this.close < this.equilibrium ?
 				PDEnum.Discount : PDEnum.Equilibrium;
@@ -94,10 +103,6 @@ export class CandleRange extends Range {
 		const open = dateToUnixEpoch(openTime);
 		const close = open + length / SECOND;
 
-		// console.log(new Date(open * SECOND).toLocaleString('en-US', {
-		// 	timeZone: 'America/New_York'
-		// }))
-
 		super(open, close, candles, strict);
 	}
 
@@ -109,6 +114,18 @@ export class CandleRange extends Range {
 		}
 
 		return this.openTime <= arg && arg <= this.closeTime;
+	}
+
+	public getPremiumArraysAtTime(unixEpoch: number, fvgs: IFairValueGap[]) {
+		fvgs = fvgs.filter(fvg => fvg.time <= unixEpoch);
+		const range = this.buildRange(unixEpoch);
+		return range.getPremiumFVGs(fvgs);
+	}
+
+	public getDiscountArraysAtTime(unixEpoch: number, fvgs: IFairValueGap[]) {
+		fvgs = fvgs.filter(fvg => fvg.time <= unixEpoch);
+		const range = this.buildRange(unixEpoch);
+		return range.getDiscountFVGs(fvgs);
 	}
 
 	public getPremiumDiscountAtTime(unixEpoch: number): PDEnum;

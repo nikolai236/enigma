@@ -5,6 +5,8 @@ import fvgRouter from "./fair-value-gap";
 import { checkForMSS, checkForMSSWithFVG } from "../../../strategies/market-structure-shift";
 import { CandleRange, checkDRPDForTimePoints, getDailyRanges } from "../../../strategies/range";
 import { PDEnum } from "../../../types/ohlcv";
+import { extendedSilverBulletSession } from "../../../strategies/session";
+import { UTCTimestamp } from "lightweight-charts";
 
 const router = Router();
 export default router;
@@ -35,4 +37,13 @@ router.get('/mss-in-discount/', (req, res) => {
     markers.start = markers.start.filter((_, i) => pds[i] !== PDEnum.Premium);
 
     return res.json({ markers, mnos });
+});
+
+router.get('/silver-bullet/', (req, res) => {
+    const { candles } = req.context;
+    const times = candles!.map(c => c.time) as UTCTimestamp[];
+    const ret = extendedSilverBulletSession.getStartEndFromArray(times);
+
+    console.log(ret);
+    return res.json(ret);
 });

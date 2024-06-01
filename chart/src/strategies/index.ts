@@ -1,8 +1,8 @@
 import { createChart } from "../../modules/lightweight-charts/lightweight-charts.standalone.development.mjs";
-import { IChartApi, ISeriesApi, Time, UTCTimestamp } from "../../modules/lightweight-charts/typings.js";
+import { IChartApi, ISeriesApi, UTCTimestamp } from "../../modules/lightweight-charts/typings.js";
 
 import { IFairValueGap, TimeFrame, Candle } from "../../../types/ohlcv.js";
-import { MINUTE, SECOND, formatTime, nominationToInterval } from "../helpers/dates.js";
+import { SECOND, formatTime, nominationToInterval } from "../helpers/dates.js";
 import Rectangle, { Point } from "../lwc-plugins/rectangle.js";
 import VertLine from "../lwc-plugins/vertical-line.js";
 
@@ -16,7 +16,7 @@ class FVG {
 		const p2 = { price: fvg.low, time: fvg.time + extent } as Point;
 
 		series.attachPrimitive(new Rectangle(p2, p1));
-	} // TODO: some fvgs if they are big enough fo not show but are still taken into account (1691161200)
+	} // TODO: some fvgs if they are big enough do not show but are still taken into account (1691161200)
 }
 
 class MNO {
@@ -148,6 +148,12 @@ export default class StartegyManager {
 		}))].sort((a, b) => a.time - b.time));
 
 		this.mnos = mnos.map(mno => new MNO(mno, this.chart, this.series));
+	}
+
+	async showSB() {
+		const url = `${this.buildStartegyUrl(this.tf)}/silver-bullet/`;
+		const lines = await (await fetch(url)).json();
+		lines.forEach(l => new MNO(l.end, this.chart, this.series));
 	}
 
 	private buildStartegyUrl(tf: TimeFrame) {

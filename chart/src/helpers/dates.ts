@@ -11,15 +11,15 @@ export function monthToString(idx: number): string {
 }
 
 export function formatTime(unixEpoch: number) {
-	// return new Date(unixEpoch * SECOND)
-	// 	.toLocaleString('en-US', {
-	// 		timeZone: "America/New_York",
-	// 		day: "numeric",
-	// 		month: "short",
-	// 		year: "2-digit",
-	// 		hour: "numeric",
-	// 		minute: "2-digit"
-	// 	});
+	return new Date(unixEpoch * SECOND)
+		.toLocaleString('en-US', {
+			timeZone: "America/New_York",
+			day: "numeric",
+			month: "short",
+			year: "2-digit",
+			hour: "numeric",
+			minute: "2-digit"
+		});
 
 	return unixEpoch;
 }

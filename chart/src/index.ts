@@ -18,6 +18,7 @@ async function main() {
 		this.showMNOs = manager.showMNOs.bind(manager);
 		this.seeMss = manager.seeMss.bind(manager);
 		this.isMSSinDiscount = manager.isMSSinDiscount.bind(manager);
+		this.showSB = manager.showSB.bind(manager);
 	})();
 
 	await window.sm.loadCandlesFromParams!();
