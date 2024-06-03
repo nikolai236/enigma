@@ -5,6 +5,8 @@ import { IFairValueGap, TimeFrame, Candle } from "../../../types/ohlcv.js";
 import { SECOND, formatTime, nominationToInterval } from "../helpers/dates.js";
 import Rectangle, { Point } from "../lwc-plugins/rectangle.js";
 import VertLine from "../lwc-plugins/vertical-line.js";
+import StrategyTester from "./tester/index.js";
+import { Position } from "../../../types/strategies.js";
 
 type CandleSeries = ISeriesApi<'Candlestick'>;
 
@@ -12,6 +14,7 @@ class FVG {
 	rectangle: Rectangle;
 
 	constructor(fvg: IFairValueGap, extent: number, series: CandleSeries) {
+		console.log(fvg)
 		const p1 = { price: fvg.high, time: fvg.time } as Point;
 		const p2 = { price: fvg.low, time: fvg.time + extent } as Point;
 
@@ -37,6 +40,8 @@ export default class StartegyManager {
 	public series: CandleSeries;
 
 	private assetUrl: string;
+
+	public tester: StrategyTester;
 
 	public fvgs: FVG[];
 	public mnos: MNO[];
@@ -91,6 +96,13 @@ export default class StartegyManager {
 		// @ts-ignore
 		this.series.setData(this.candles);
 		chart.timeScale().fitContent();
+
+		const getPos = (async (name: string) => {
+			const url = `${this.buildStartegyUrl(this.tf)}/${name}/`;
+			return await (await fetch(url)).json() as Position[];
+		}).bind(this) as (name: string) => Promise<Position[]>;
+
+		this.tester = new StrategyTester(this.candles, getPos);
 	}
 
 	public async loadFVGs(tf: TimeFrame) {
@@ -102,7 +114,7 @@ export default class StartegyManager {
 		this.fvgs = fvgs.slice(0, 35).map(fvg => new FVG(fvg, extent, this.series));
 	}
 
-	public async seeMss() {
+	public async seeMss() { 
 		const url = `${this.buildStartegyUrl(this.tf)}/mss/`;
 		const { start, stop } = await (await fetch(url)).json();
 
@@ -128,10 +140,36 @@ export default class StartegyManager {
 		this.mnos = mnos.map(mno => new MNO(mno, this.chart, this.series));
 	}
 
+	public async test2022Model() {
+		await this.tester.testStategy('2022-model/v1');
+		// const url = `${this.buildStartegyUrl(this.tf)}/2022-model/v1/`;
+		// const entries = await (await fetch(url)).json();
+
+		// const start = entries.map(e => e[0]);
+		// const stop = entries.map(e => e[1]);
+		// const fvgs = entries.map(e => e[2][0]);
+
+		// this.series.setMarkers([...stop.map(time => ({
+		// 	time: time,
+		// 	position: 'aboveBar', 
+		// 	color: '#f68410', 
+		// 	shape: 'circle', 
+		// 	text: 'B'
+		// })), ...start.map(time => ({
+		// 	time: time,
+		// 	position: 'belowBar', 
+		// 	color: '#f68410', 
+		// 	shape: 'circle', 
+		// 	text: 'A'
+		// }))].sort((a, b) => a.time - b.time));
+
+		// const extent = 10 * nominationToInterval(this.tf) / SECOND;
+		// this.fvgs = fvgs.map(fvg => new FVG(fvg, extent, this.series));
+	}
+
 	public async isMSSinDiscount() {
 		const url = `${this.buildStartegyUrl(this.tf)}/mss-in-discount/`;
 		const { mnos, markers } = await (await fetch(url)).json();
-		console.log({ mnos, markers })
 
 		this.series.setMarkers([...markers.stop.map(time => ({
 			time: time,

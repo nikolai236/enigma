@@ -28,7 +28,6 @@ export function fromEST(date: Date|UTCTimestamp, hours: number, minutes=0) {
     if (returnUnixEpoch) {
         date = unixEpochToDate(date as UTCTimestamp);
     }
-    console.log(hours, minutes)
 
     const ret = moment
         .utc(date)

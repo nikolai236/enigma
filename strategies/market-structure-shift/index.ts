@@ -55,7 +55,8 @@ export function checkForMSS(bullish: boolean, candles: Candle[], timeframe: Time
 
 // TODO algo gives 'incorrect' SL when the MSS candle is the protetcted low low
 export function checkForMSSWithFVG(bullish: boolean, candles: Candle[], timeframe: TimeFrame) {
-	const ret: { start: number[], stop: number[] } = { start: [], stop: [] };
+	const ret: { origin: number[], mss: number[] } = { origin: [], mss: [] };
+	const candlesRet: { origin?: Candle[], mss?: Candle[] } = { origin: [], mss: [] };
 
 	/* The last of these swings in this array is the swing 
 		violated fro the MSS to occur e. g. a swing high when bullish */
@@ -86,8 +87,10 @@ export function checkForMSSWithFVG(bullish: boolean, candles: Candle[], timefram
 		const fvgs = findFVGsInCandles(leg, timeframe);
 
 		if(fvgs.length !== 0) {
-			ret.stop.push(candles[violationIdx].time);
-			ret.start.push(candles[legIdx].time);
+			ret.mss.push(candles[violationIdx].time);
+			ret.origin.push(candles[legIdx].time);
+			candlesRet.origin?.push(candles[legIdx])
+			candlesRet.mss?.push(candles[violationIdx])
 
 			stxs = [];
 		}
@@ -129,5 +132,5 @@ export function checkForMSSWithFVG(bullish: boolean, candles: Candle[], timefram
 		}
 	}
 
-	return ret;
+	return { ...ret, candlesRet };
 }

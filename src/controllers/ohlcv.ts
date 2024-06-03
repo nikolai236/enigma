@@ -1,27 +1,31 @@
 import { readdir, readFile } from 'fs/promises';
 import { resolve, join } from "path";
 import { Candle, TimeFrameEnum, TimeFrame } from "../../types/ohlcv";
+import { getContractExpiration } from '../macros/contracts';
 
-export async function getData(contractDir: string): Promise<{ [tf in TimeFrameEnum]?: Candle[] }>
-export async function getData(contractDir: string, specificTf: TimeFrame): Promise<Candle[]>
-export async function getData(contractDir: string, specificTf?: TimeFrame) {
+export async function getCandlesticks(contractName: string, assetDir: string): Promise<{ [tf in TimeFrameEnum]?: Candle[] }>
+export async function getCandlesticks(contractName: string, assetDir: string, specificTf: TimeFrame): Promise<Candle[]>
+export async function getCandlesticks(contractName: string, assetDir: string, specificTf?: TimeFrame) {
 
+	const [_, contractMonth] = contractName.split('_');
+	const contractDir = join(assetDir, contractName);
+
+	const expiration = getContractExpiration(contractMonth) + DAY;
 	const tfs = getTimeframes()
 		.filter(tf => specificTf == null || tf == specificTf);
-	
-	const data = await Promise.all(tfs.map(async tf => {
+
+	const ret: { [tf in TimeFrameEnum]?: Candle[] } = {};
+	await Promise.all(tfs.map(async tf => {
+
 		const fileName = (await readdir(contractDir))
 			.find(f => f.endsWith('_' + tf + '.ohlcv'))!;
 
 		const buff = await readFile(join(contractDir, fileName));
-		const data = readOHLCV(buff.toString('binary'));
+		const candles = readOHLCV(buff.toString('binary'))
+			.filter(c => c.time < expiration / SECOND);
 
-		return { key: tf, data };
+		ret[tf] = candles;
 	}));
-
-	const ret = data.reduce<{ [tf in TimeFrameEnum]?: Candle[] }>(
-		(obj, { key, data}) => ({ ...obj, [key]: data }), {}
-	);
 
 	return specificTf !== undefined ? ret[specificTf] : ret;
 }
@@ -62,7 +66,7 @@ export function getTimeframes() {
 }
 
 export function isTimeFrameValid(str: string): str is TimeFrame {
-	return (new Set(getTimeframes())).has(str as TimeFrame);
+	return (new Set<string>(getTimeframes())).has(str);
 }
 
 export const SECOND = 1000;

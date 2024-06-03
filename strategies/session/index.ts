@@ -36,10 +36,10 @@ class Session {
 
     isTimePointInSession(time: UTCTimestamp) {
         const { start, end } = this.getStartEndTimes(time);
-        return start > time && time < end;
+        return start < time && time < end;
     }
 
-    getPricePointsOnlyDuringSession(times: UTCTimestamp[]) {
+    getTimePointsDuringSession(times: UTCTimestamp[]) {
         return times.filter(t => this.isTimePointInSession(t));
     }
 
@@ -49,7 +49,6 @@ class Session {
 
         const start = fromEST(time, ...this.start);
         const end = fromEST(endTime, ...this.end);
-        // console.log(fromEST(unixEpochToDate(time), ...this.start))
 
         return { start, end };
     }
@@ -62,7 +61,6 @@ class Session {
 
         while(currTime < lastTime) {
             const { start, end } = this.getStartEndTimes(currTime);
-            console.log(unixEpochToDate(currTime), unixEpochToDate(start))
 
             if (ret.length !== 0) {
                 ret.push({ start, end });

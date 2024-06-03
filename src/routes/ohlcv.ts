@@ -3,7 +3,7 @@ import { readdir } from 'fs/promises';
 import { resolve, join } from "path";
 import { getContractExpiration, sortContracts } from "../macros/contracts";
 import { Candle, TimeFrame } from "../../types/ohlcv";
-import { getData, isTimeFrameValid, DAY } from "../controllers/ohlcv";
+import { getCandlesticks, isTimeFrameValid, DAY } from "../controllers/ohlcv";
 import startegyRouter from './startegies';
 
 const router = Router();
@@ -15,7 +15,7 @@ declare global {
 			context: {
 				candles?: Candle[]; 
 				timeframe?: TimeFrame;
-				contractDir?: string;
+				contractName?: string;
 				dataFolders?: string[];
 				assetDir?: string;
 			};
@@ -75,21 +75,21 @@ async function validateTFandContractDir(req: Request, res: Response, next: NextF
 
 	let candles: Candle[];
 	try {
-		candles = await getData(contractDir!, timeframe!);
+		candles = await getCandlesticks(
+			contractName, assetDir, timeframe
+		);
 		if (candles == null) {
 			throw new Error('Something went wrong');
 		}
-		
 	} catch(err) {
 		console.error(err);
 		return res.sendStatus(404);
 	}
 
-	const [_, contractMonth] = contractName.split('_');
-	candles = candles.filter(candle =>
-		candle.time * 1000 < getContractExpiration(contractMonth) + DAY
-	),
-	
-	Object.assign(req.context, { contractDir, timeframe, candles });
+	Object.assign(req.context, {
+		contractName,
+		timeframe,
+		candles
+	});
 	return next();
 }
